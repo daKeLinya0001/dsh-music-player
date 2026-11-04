@@ -3,7 +3,27 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Import local audio into DSH and play it from a sidebar panel.",
+  "description": "Local music player for DSH with audio-reactive spectrum bars and customizable shortcuts.",
+  "license": "MIT",
+  "author": "daKeLinya0001",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daKeLinya0001/dsh-music-player.git"
+  },
+  "homepage": "https://github.com/daKeLinya0001/dsh-music-player#readme",
+  "bugs": {
+    "url": "https://github.com/daKeLinya0001/dsh-music-player/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "music-player",
+    "web-audio",
+    "visualizer"
+  ],
+  "scripts": {
+    "check": "node --check client.js"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -15,7 +35,9 @@
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg"
+    "icon.svg",
+    "README.md",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {

@@ -1,4 +1,6 @@
-# 音乐播放器
+# 音乐播放器（@local/dsh-music-player）
+
+A local music player plugin for DSH with audio-reactive spectrum bars, workspace backdrop bars, and customizable shortcuts.
 
 一个运行在 DSH Web UI 中的本地音乐播放器插件：
 
@@ -9,9 +11,12 @@
 - 可自定义键盘快捷键
 - 全部数据保存在本地，不上传音频
 
+> GitHub：<https://github.com/daKeLinya0001/dsh-music-player>  
 > 当前版本：`1.0.0`  
-> 当前 Profile：`desktop`  
+> 许可证：MIT  
 > 文档更新：2026-11-04
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
@@ -70,33 +75,38 @@
 - 当前 DSH 使用 Web UI
 - 浏览器支持 IndexedDB、Web Audio、`backdrop-filter` 和 `color-mix`
 
-### 安装
+### 获取插件
 
-当前工作区已经以本地目录方式安装到 `desktop` Profile：
+从 GitHub 仓库页面获取源码：
 
-- 源码目录：
-  `C:\Users\39211\Documents\deepseek-harness\default-workspace\music-player`
-- 安装路径：
-  `C:\Users\39211\.dsh\profiles\desktop\node_modules\@local\dsh-music-player`
-- 安装路径是指向源码目录的 Junction 链接
+- 点击 **Code → Download ZIP**，解压到本地目录
+- 或使用 Git 克隆：
 
-Profile 注册文件：
-
-`C:\Users\39211\.dsh\profiles\desktop\package.json`
-
-其中包含：
-
-```json
-"@local/dsh-music-player": "link:C:/Users/39211/Documents/deepseek-harness/default-workspace/music-player"
+```bash
+git clone https://github.com/daKeLinya0001/dsh-music-player.git
 ```
 
-并在 `dsh.profile.bundles` 中启用了：
+插件是本地 DSH bundle，没有预编译产物，下载后直接使用仓库根目录。
+
+### 安装到 DSH
+
+1. 在 DSH 的插件管理中选择从本地目录安装
+2. `target` 指向仓库根目录（包含 `package.json` 的那一层）
+3. 启用 bundle：`@local/dsh-music-player`
+4. 刷新 DSH 页面
+
+如果下载的是 Release ZIP，解压后的 `music-player` 目录就是 `target`。
+
+也可以使用 DSH 的 `plugin_manager` 工具：
 
 ```text
-@local/dsh-music-player
+action: install_bundle
+target: <仓库根目录的绝对路径>
 ```
 
-如需在其他 Profile 安装，可使用 DSH 的插件管理器从本地目录安装，`target` 指向本目录，然后启用 `@local/dsh-music-player`。本插件没有单独的构建产物，安装后直接运行 `client.js`。
+安装完成后确认 `@local/dsh-music-player` 在 Profile 的 bundle 列表中处于启用状态。
+
+> `package.json` 中的 `private: true` 仅表示不发布到 npm；不影响从 GitHub 下载和本地安装。
 
 ### 打开播放器
 
@@ -260,16 +270,16 @@ id, name, ext, blob, type, size, addedAt, duration
 
 ### Electron 桌面版磁盘位置
 
-当前桌面版的 IndexedDB 数据位于：
+当前桌面版的 IndexedDB 数据位于（Windows 默认路径）：
 
 ```text
-C:\Users\39211\AppData\Roaming\@deepseek-ai\dsh-desktop\IndexedDB\dsh-app_app_0.indexeddb.leveldb
+%APPDATA%\@deepseek-ai\dsh-desktop\IndexedDB\dsh-app_app_0.indexeddb.leveldb
 ```
 
 较大的音频 Blob 可能位于同级的：
 
 ```text
-C:\Users\39211\AppData\Roaming\@deepseek-ai\dsh-desktop\IndexedDB\dsh-app_app_0.indexeddb.blob
+%APPDATA%\@deepseek-ai\dsh-desktop\IndexedDB\dsh-app_app_0.indexeddb.blob
 ```
 
 这些文件由 Chromium/Electron 管理，不能直接作为普通 MP3 文件播放，也不建议在应用运行时手动修改。
@@ -301,7 +311,9 @@ C:\Users\39211\AppData\Roaming\@deepseek-ai\dsh-desktop\IndexedDB\dsh-app_app_0.
 ## 目录结构
 
 ```text
-music-player/
+.
+├── .gitignore
+├── LICENSE
 ├── package.json          # 插件清单与 DSH bundle 声明
 ├── cordis.patch.yml      # 注册插件行
 ├── index.js              # Host 侧空实现
@@ -310,6 +322,9 @@ music-player/
 ├── locale/
 │   ├── en.json           # 插件管理元数据（英文）
 │   └── zh.json           # 插件管理元数据（中文）
+├── .github/
+│   └── workflows/
+│       └── check.yml     # GitHub Actions 语法检查
 └── README.md
 ```
 
@@ -372,13 +387,9 @@ HTMLAudioElement
 
 ### 修改代码
 
-直接编辑：
+直接编辑仓库中的 `client.js`。
 
-```text
-C:\Users\39211\Documents\deepseek-harness\default-workspace\music-player\client.js
-```
-
-当前 Profile 的安装路径是 Junction，编辑源码即可同步到安装路径。修改后需要重新加载插件：
+安装到 Profile 后，修改源码需要重新加载插件：
 
 1. 在插件管理中禁用 `@local/dsh-music-player`
 2. 再启用
@@ -471,9 +482,22 @@ IndexedDB 数据不会自动同步到其他浏览器或机器。
 
 ---
 
+## Contributing
+
+欢迎通过 GitHub Issues 反馈问题，或提交 Pull Request。
+
+- 保持无构建步骤：修改 `client.js` 后直接重载插件
+- 提交前运行 `node --check client.js`
+- 说明复现步骤、DSH 版本和浏览器/桌面端环境
+- 不要提交个人音乐、IndexedDB 数据或本地 Profile 路径
+
+---
+
 ## License
 
-当前 `package.json` 标记为 `private`，未声明开源许可证。对外分发前请补充 `LICENSE` 文件。
+本项目使用 **MIT License**，版权归 `daKeLinya0001` 所有。
+
+完整条款见 [LICENSE](LICENSE)。
 
 ---
 
