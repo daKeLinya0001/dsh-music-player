@@ -1,4 +1,4 @@
-# 音乐播放器（@local/dsh-music-player）
+# 音乐播放器
 
 A local music player plugin for DSH with audio-reactive spectrum bars, workspace backdrop bars, and customizable shortcuts.
 
