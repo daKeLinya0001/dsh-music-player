@@ -1,4 +1,4 @@
-# 音乐播放器（@local/dsh-music-player）
+# 音乐播放器
 
 一个运行在 DSH Web UI 中的本地音乐播放器插件：
 
