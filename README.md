@@ -1,4 +1,4 @@
-# 音乐播放器
+# 音乐播放器（@dakelinya0001/dsh-music-player）
 
 A local music player plugin for DSH with audio-reactive spectrum bars, workspace backdrop bars, and customizable shortcuts.
 
@@ -104,7 +104,7 @@ git clone https://github.com/daKeLinya0001/dsh-music-player.git
 
 1. 在 DSH 的插件管理中选择从本地目录安装
 2. `target` 指向仓库根目录（包含 `package.json` 的那一层）
-3. 启用 bundle：`@daKelinya0001/dsh-music-player`
+3. 启用 bundle：`@dakelinya0001/dsh-music-player`
 4. 刷新 DSH 页面
 
 如果下载的是 Release ZIP，解压后的 `music-player` 目录就是 `target`。
@@ -116,7 +116,7 @@ action: install_bundle
 target: <仓库根目录的绝对路径>
 ```
 
-安装完成后确认 `@daKelinya0001/dsh-music-player` 在 Profile 的 bundle 列表中处于启用状态。
+安装完成后确认 `@dakelinya0001/dsh-music-player` 在 Profile 的 bundle 列表中处于启用状态。
 
 > `package.json` 中的 `private: true` 仅表示不发布到 npm；不影响从 GitHub 下载和本地安装。
 
@@ -472,7 +472,7 @@ HTMLAudioElement
 
 安装到 Profile 后，修改源码需要重新加载插件：
 
-1. 在插件管理中禁用 `@daKelinya0001/dsh-music-player`
+1. 在插件管理中禁用 `@dakelinya0001/dsh-music-player`
 2. 再启用
 3. 刷新 DSH 页面
 
@@ -585,4 +585,4 @@ IndexedDB 数据不会自动同步到其他浏览器或机器。
 ## 版本
 
 - `1.1.0`
-- 私有本地插件，包名 `@daKelinya0001/dsh-music-player`
+- 私有本地插件，包名 `@dakelinya0001/dsh-music-player`

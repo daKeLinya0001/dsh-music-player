@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@daKelinya0001/dsh-music-player',
+  id: '@dakelinya0001/dsh-music-player',
   factory(require) {
     const React = require('react');
     const { useCallback, useEffect, useMemo, useRef, useState } = React;
