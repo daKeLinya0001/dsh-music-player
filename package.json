@@ -1,6 +1,6 @@
 {
-  "name": "@local/dsh-music-player",
-  "version": "1.0.0",
+  "name": "@daKelinya0001/dsh-music-player",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Local music player for DSH with audio-reactive spectrum bars and customizable shortcuts.",

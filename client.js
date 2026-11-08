@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@local/dsh-music-player',
+  id: '@daKelinya0001/dsh-music-player',
   factory(require) {
     const React = require('react');
     const { useCallback, useEffect, useMemo, useRef, useState } = React;
@@ -22,6 +22,12 @@ window.__ModuleLoader__.load({
     const LS_REPEAT = 'dsh-music-player:repeat';
     const LS_LAST = 'dsh-music-player:last';
     const LS_SETTINGS = 'dsh-music-player:settings';
+    const DEFAULT_VINYL_COLOR = '#0a0b10';
+    const DEFAULT_VINYL_LABEL_IMAGE =
+      'data:image/svg+xml;charset=utf-8,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#ffffff"/></svg>'
+      );
     const DEFAULT_SETTINGS = {
       spectrumEnabled: true,
       workspaceSpectrumEnabled: true,
@@ -31,6 +37,16 @@ window.__ModuleLoader__.load({
       barSpeed: 35,
       barOpacity: 64,
       cardOpacity: 64,
+      playerTextColor: '',
+      labelImage: '',
+      vinylColor: DEFAULT_VINYL_COLOR,
+      recordParticleSize: 100,
+      recordParticleColor: '',
+      barParticleSize: 100,
+      barParticleColor: '',
+      barGlowSize: 100,
+      barGlowColor: '',
+      particleCount: 50,
       shortcuts: {
         playPause: 'Space',
         previous: 'KeyA',
@@ -43,6 +59,24 @@ window.__ModuleLoader__.load({
 
     function isShortcutCode(code) {
       return typeof code === 'string' && SHORTCUT_CODE_RE.test(code);
+    }
+
+    function particleAllocation(value) {
+      const raw = Number(value);
+      const total = Number.isFinite(raw)
+        ? Math.max(0, Math.min(200, Math.round(raw)))
+        : DEFAULT_SETTINGS.particleCount;
+      if (total <= 0) {
+        return { total: 0, record: 0, barBase: 0, barExtra: 0 };
+      }
+      const record = Math.max(1, Math.round(total * 0.36));
+      const barTotal = Math.max(0, total - record);
+      return {
+        total,
+        record,
+        barBase: Math.floor(barTotal / 32),
+        barExtra: barTotal % 32
+      };
     }
 
     function shortcutCodeFromEvent(event) {
@@ -131,6 +165,36 @@ window.__ModuleLoader__.load({
       'settings': 'Settings',
       'settingsTitle': 'Player settings',
       'settingsHint': 'Changes are saved automatically.',
+      'settingsGeneral': 'General',
+      'vinylOptions': 'Vinyl options',
+      'vinylOptionsHint': 'Customize the record label image and the vinyl color.',
+      'vinylLabelImage': 'Record label image',
+      'vinylLabelImageHint': 'Choose an image for the center label. The default is a pure white image.',
+      'vinylLabelDefault': 'Default white image',
+      'vinylLabelCustom': 'Custom image',
+      'chooseImage': 'Choose image',
+      'processingImage': 'Processing…',
+      'labelImageInvalid': 'Could not read that image. Choose a valid image file.',
+      'vinylColor': 'Vinyl color',
+      'vinylColorHint': 'Change the color of the vinyl body. The default is near-black.',
+      'effectsOptions': 'Effects',
+      'effectsHint': 'Adjust the size and color of record particles, bar particles, and bar glow.',
+      'recordParticles': 'Record particles',
+      'recordParticleSize': 'Record particle size',
+      'recordParticleColor': 'Record particle color',
+      'barParticles': 'Bar particles',
+      'barParticleSize': 'Bar particle size',
+      'barParticleColor': 'Bar particle color',
+      'barGlow': 'Bar glow',
+      'barGlowSize': 'Bar glow size',
+      'barGlowColor': 'Bar glow color',
+      'particleCount': 'Particle count',
+      'particleCountWarning': '(This option may affect performance)',
+      'particleCountHint': '0 hides all particles; higher values create more particles.',
+      'followCover': 'Follow cover',
+      'followBarColor': 'Follow bar color',
+      'effectSizeHint': '100% is the default; 0% hides this effect.',
+      'effectColorHint': 'A custom color overrides the automatic color.',
       'spectrumEnabled': 'Rhythm visualizer',
       'spectrumEnabledHint': 'Show audio-reactive bars behind the player content.',
       'workspaceSpectrumEnabled': 'Show bars in workspace',
@@ -147,11 +211,21 @@ window.__ModuleLoader__.load({
       'barOpacityHint': '0 = transparent, 100 = opaque',
       'cardOpacity': 'Card background opacity',
       'cardOpacityHint': '0 = transparent, 100 = opaque',
+      'playerTextColor': 'Player text color',
+      'playerTextColorHint': 'Leave unset to follow the DSH theme text color.',
+      'followTheme': 'Follow theme',
       'presets': 'Presets',
       'on': 'On',
       'off': 'Off',
       'close': 'Close',
       'autoSaved': 'Saved automatically',
+      'resetAll': 'Reset all settings',
+      'resetAllHint': 'Restore player settings to defaults. Your music library is not deleted.',
+      'resetSetting': 'Reset',
+      'resetSettingTitle': 'Reset to default',
+      'resetConfirm': 'Reset all settings?',
+      'resetConfirmAction': 'Reset',
+      'cancel': 'Cancel',
       'shortcutsSection': 'Keyboard shortcuts',
       'shortcutsHint': 'Click a key, then press a new one. Esc cancels.',
       'shortcutPlayPause': 'Play / pause',
@@ -206,6 +280,36 @@ window.__ModuleLoader__.load({
       'settings': '设置',
       'settingsTitle': '播放器设置',
       'settingsHint': '修改会自动保存。',
+      'settingsGeneral': '常规',
+      'vinylOptions': '黑胶唱片选项',
+      'vinylOptionsHint': '自定义唱片标签图片和黑胶唱片颜色。',
+      'vinylLabelImage': '唱片标签图片',
+      'vinylLabelImageHint': '选择一张图片作为唱片中心标签，默认是一张纯白图片。',
+      'vinylLabelDefault': '默认白图',
+      'vinylLabelCustom': '自定义图片',
+      'chooseImage': '选择图片',
+      'processingImage': '处理中…',
+      'labelImageInvalid': '图片读取失败，请选择有效的图片文件。',
+      'vinylColor': '黑胶唱片颜色',
+      'vinylColorHint': '调整黑胶唱片本体的颜色，默认接近黑色。',
+      'effectsOptions': '特效',
+      'effectsHint': '调整唱片粒子、频谱柱粒子和频谱柱光晕的大小与颜色。',
+      'recordParticles': '唱片粒子',
+      'recordParticleSize': '唱片粒子大小',
+      'recordParticleColor': '唱片粒子颜色',
+      'barParticles': '频谱柱粒子',
+      'barParticleSize': '频谱柱粒子大小',
+      'barParticleColor': '频谱柱粒子颜色',
+      'barGlow': '频谱柱光晕',
+      'barGlowSize': '频谱柱光晕大小',
+      'barGlowColor': '频谱柱光晕颜色',
+      'particleCount': '粒子数量',
+      'particleCountWarning': '（此选项可能会影响性能）',
+      'particleCountHint': '0 会隐藏所有粒子；数值越高，粒子数量越多。',
+      'followCover': '跟随封面',
+      'followBarColor': '跟随频谱柱颜色',
+      'effectSizeHint': '100% 为默认大小，0% 会隐藏该特效。',
+      'effectColorHint': '选择自定义颜色后会覆盖自动颜色。',
       'spectrumEnabled': '律动频谱',
       'spectrumEnabledHint': '在播放器文字下方显示随音频跳动的频谱柱。',
       'workspaceSpectrumEnabled': '在工作区显示频谱柱',
@@ -222,11 +326,21 @@ window.__ModuleLoader__.load({
       'barOpacityHint': '0 全透明，100 不透明',
       'cardOpacity': '背景卡片透明度',
       'cardOpacityHint': '0 全透明，100 不透明',
+      'playerTextColor': '播放器文字颜色',
+      'playerTextColorHint': '不设置时跟随 DSH 主题文字颜色。',
+      'followTheme': '跟随主题',
       'presets': '预设颜色',
       'on': '开启',
       'off': '关闭',
       'close': '关闭',
       'autoSaved': '自动保存',
+      'resetAll': '重置所有设置',
+      'resetAllHint': '恢复播放器设置默认值，不会删除音乐库。',
+      'resetSetting': '重置',
+      'resetSettingTitle': '恢复默认值',
+      'resetConfirm': '确定要重置所有设置吗？',
+      'resetConfirmAction': '确认重置',
+      'cancel': '取消',
       'shortcutsSection': '键盘快捷键',
       'shortcutsHint': '点击快捷键后按下新按键，Esc 取消。',
       'shortcutPlayPause': '播放 / 暂停',
@@ -271,6 +385,16 @@ window.__ModuleLoader__.load({
         const opacity = Number(parsed && parsed.barOpacity);
         const cardOpacity = Number(parsed && parsed.cardOpacity);
         const color = String((parsed && parsed.barColor) || '');
+        const playerTextColor = String((parsed && parsed.playerTextColor) || '');
+        const labelImage = String((parsed && parsed.labelImage) || '');
+        const vinylColor = String((parsed && parsed.vinylColor) || '');
+        const recordParticleSize = Number(parsed && parsed.recordParticleSize);
+        const barParticleSize = Number(parsed && parsed.barParticleSize);
+        const barGlowSize = Number(parsed && parsed.barGlowSize);
+        const recordParticleColor = String((parsed && parsed.recordParticleColor) || '');
+        const barParticleColor = String((parsed && parsed.barParticleColor) || '');
+        const barGlowColor = String((parsed && parsed.barGlowColor) || '');
+        const particleCount = Number(parsed && parsed.particleCount);
         return {
           spectrumEnabled:
             parsed && typeof parsed.spectrumEnabled === 'boolean'
@@ -297,6 +421,34 @@ window.__ModuleLoader__.load({
           cardOpacity: Number.isFinite(cardOpacity)
             ? Math.max(0, Math.min(100, Math.round(cardOpacity)))
             : DEFAULT_SETTINGS.cardOpacity,
+          playerTextColor: /^#[0-9a-f]{6}$/i.test(playerTextColor)
+            ? playerTextColor
+            : '',
+          labelImage: /^data:image\//i.test(labelImage) ? labelImage : '',
+          vinylColor: /^#[0-9a-f]{6}$/i.test(vinylColor)
+            ? vinylColor
+            : DEFAULT_SETTINGS.vinylColor,
+          recordParticleSize: Number.isFinite(recordParticleSize)
+            ? Math.max(0, Math.min(200, Math.round(recordParticleSize)))
+            : DEFAULT_SETTINGS.recordParticleSize,
+          recordParticleColor: /^#[0-9a-f]{6}$/i.test(recordParticleColor)
+            ? recordParticleColor
+            : '',
+          barParticleSize: Number.isFinite(barParticleSize)
+            ? Math.max(0, Math.min(200, Math.round(barParticleSize)))
+            : DEFAULT_SETTINGS.barParticleSize,
+          barParticleColor: /^#[0-9a-f]{6}$/i.test(barParticleColor)
+            ? barParticleColor
+            : '',
+          barGlowSize: Number.isFinite(barGlowSize)
+            ? Math.max(0, Math.min(200, Math.round(barGlowSize)))
+            : DEFAULT_SETTINGS.barGlowSize,
+          barGlowColor: /^#[0-9a-f]{6}$/i.test(barGlowColor)
+            ? barGlowColor
+            : '',
+          particleCount: Number.isFinite(particleCount)
+            ? Math.max(0, Math.min(200, Math.round(particleCount)))
+            : DEFAULT_SETTINGS.particleCount,
           shortcuts: normalizeShortcuts(parsed && parsed.shortcuts)
         };
       } catch (error) {
@@ -324,6 +476,14 @@ window.__ModuleLoader__.load({
         },
         update: (patch) => {
           const settings = Object.assign({}, snapshot.settings, patch);
+          snapshot = { settings, open: snapshot.open };
+          writeLS(LS_SETTINGS, JSON.stringify(settings));
+          emit();
+        },
+        reset: () => {
+          const settings = Object.assign({}, DEFAULT_SETTINGS, {
+            shortcuts: Object.assign({}, DEFAULT_SETTINGS.shortcuts)
+          });
           snapshot = { settings, open: snapshot.open };
           writeLS(LS_SETTINGS, JSON.stringify(settings));
           emit();
@@ -395,15 +555,6 @@ window.__ModuleLoader__.load({
       const slash = type.indexOf('/');
       if (slash >= 0) return type.slice(slash + 1).toUpperCase();
       return 'AUDIO';
-    }
-
-    function hueFor(value) {
-      const text = String(value || '');
-      let hash = 0;
-      for (let index = 0; index < text.length; index += 1) {
-        hash = (hash * 31 + text.charCodeAt(index)) % 360;
-      }
-      return hash;
     }
 
     function shallowEqual(left, right) {
@@ -1236,6 +1387,50 @@ window.__ModuleLoader__.load({
       );
     }
 
+    function IconReset(props) {
+      return h(
+        'svg',
+        {
+          viewBox: '0 0 24 24',
+          width: props.size || 14,
+          height: props.size || 14,
+          'aria-hidden': true,
+          focusable: false
+        },
+        h('path', {
+          d: 'M20 11a8 8 0 1 0-2.34 5.66',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.8,
+          strokeLinecap: 'round'
+        }),
+        h('path', {
+          d: 'M20 4v7h-7',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.8,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round'
+        })
+      );
+    }
+
+    function SettingReset(props) {
+      const label = props.title || props.t('resetSettingTitle');
+      return h(
+        'button',
+        {
+          type: 'button',
+          className: 'dsh-music-setting-reset',
+          title: label,
+          'aria-label': label,
+          disabled: !!props.disabled,
+          onClick: props.onClick
+        },
+        h(IconReset, { size: 14 })
+      );
+    }
+
     function IconGear(props) {
       return h(
         'svg',
@@ -1380,6 +1575,320 @@ window.__ModuleLoader__.load({
 
     const MemoTrackRow = React.memo(TrackRow);
 
+    function VinylDisc(props) {
+      const discRef = useRef(null);
+      const angleRef = useRef(0);
+      const velocityRef = useRef(0);
+
+      useEffect(() => {
+        const disc = discRef.current;
+        if (!disc) return undefined;
+        let frame = 0;
+        let last = 0;
+
+        const tick = (now) => {
+          if (!last) last = now;
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          const playing = !!props.playing;
+          const target = playing ? 0.55 : 0;
+          const ease = playing ? 0.07 : 0.03;
+          velocityRef.current += (target - velocityRef.current) * ease;
+
+          if (!playing && velocityRef.current < 0.003) {
+            velocityRef.current = 0;
+            disc.style.transform = 'rotate(' + angleRef.current.toFixed(2) + 'deg)';
+            return;
+          }
+
+          angleRef.current = (angleRef.current + velocityRef.current * dt * 360) % 360;
+          disc.style.transform = 'rotate(' + angleRef.current.toFixed(2) + 'deg)';
+          frame = requestAnimationFrame(tick);
+        };
+
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+      }, [props.playing]);
+
+      return h(
+        'div',
+        { className: 'dsh-music-vinyl-disc', ref: discRef, 'aria-hidden': true },
+        h('div', { className: 'dsh-music-vinyl-grooves' }),
+        h(
+          'div',
+          { className: 'dsh-music-vinyl-label' },
+          h('img', {
+            className: 'dsh-music-vinyl-label-image',
+            src: props.image || DEFAULT_VINYL_LABEL_IMAGE,
+            alt: '',
+            draggable: false
+          })
+        ),
+        h('div', { className: 'dsh-music-vinyl-spindle' })
+      );
+    }
+
+    function hexToRgb(value) {
+      const raw = String(value || '').replace('#', '');
+      if (!/^[0-9a-f]{6}$/i.test(raw)) return null;
+      return {
+        r: parseInt(raw.slice(0, 2), 16),
+        g: parseInt(raw.slice(2, 4), 16),
+        b: parseInt(raw.slice(4, 6), 16)
+      };
+    }
+
+    function useCoverColor(src) {
+      const [color, setColor] = useState({ r: 255, g: 255, b: 255 });
+      useEffect(() => {
+        let canceled = false;
+        const image = new Image();
+        image.onload = () => {
+          if (canceled) return;
+          try {
+            const size = 24;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+            if (!context) return;
+            context.drawImage(image, 0, 0, size, size);
+            const data = context.getImageData(0, 0, size, size).data;
+            let best = null;
+            let bestScore = -1;
+            for (let index = 0; index < data.length; index += 4) {
+              if (data[index + 3] < 128) continue;
+              const r = data[index];
+              const g = data[index + 1];
+              const b = data[index + 2];
+              const max = Math.max(r, g, b);
+              const min = Math.min(r, g, b);
+              const score = ((max - min) / 255) * 0.8 + (max / 255) * 0.2;
+              if (score > bestScore) {
+                bestScore = score;
+                best = { r, g, b };
+              }
+            }
+            if (!best) best = { r: 255, g: 255, b: 255 };
+            const peak = Math.max(best.r, best.g, best.b);
+            if (peak < 92) {
+              best = {
+                r: Math.round(best.r * 0.45 + 255 * 0.55),
+                g: Math.round(best.g * 0.45 + 255 * 0.55),
+                b: Math.round(best.b * 0.45 + 255 * 0.55)
+              };
+            }
+            setColor(best);
+          } catch (error) {
+            /* Keep the neutral particle color when the cover cannot be sampled. */
+          }
+        };
+        image.src = src || DEFAULT_VINYL_LABEL_IMAGE;
+        return () => {
+          canceled = true;
+        };
+      }, [src]);
+      return color;
+    }
+
+    function ParticleField(props) {      const canvasRef = useRef(null);
+      const coverColor = useCoverColor(props.cover);
+      const customColor = hexToRgb(props.color);
+      const color = customColor || coverColor;
+      const colorRef = useRef(color);
+      const requestedSize = Number(props.size);
+      const sizeScale = Number.isFinite(requestedSize)
+        ? Math.max(0, Math.min(200, requestedSize)) / 100
+        : 1;
+      const sizeRef = useRef(sizeScale);
+      const recordParticleCount = particleAllocation(props.particleCount).record;
+      const playingRef = useRef(!!props.playing);
+      const startRef = useRef(null);
+      colorRef.current = color;
+      sizeRef.current = sizeScale;
+      playingRef.current = !!props.playing;
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return undefined;
+        const parent = canvas.parentElement;
+        const context = canvas.getContext('2d');
+        if (!parent || !context) return undefined;
+
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+        let frame = 0;
+        let running = false;
+        let last = 0;
+        let intensity = 0;
+        let particles = [];
+        const geometry = { cx: 0, cy: 0, r: 60 };
+        const art = props.artRef && props.artRef.current;
+
+        const resize = () => {
+          const rect = parent.getBoundingClientRect();
+          const nextWidth = Math.max(1, Math.floor(rect.width));
+          const nextHeight = Math.max(1, Math.floor(rect.height));
+          const nextDpr = Math.min(2, window.devicePixelRatio || 1);
+          if (nextWidth !== width || nextHeight !== height || nextDpr !== dpr) {
+            width = nextWidth;
+            height = nextHeight;
+            dpr = nextDpr;
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            context.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          if (art) {
+            const artRect = art.getBoundingClientRect();
+            geometry.cx = artRect.left + artRect.width / 2 - rect.left;
+            geometry.cy = artRect.top + artRect.height / 2 - rect.top;
+            geometry.r = Math.max(
+              20,
+              (Math.min(artRect.width, artRect.height) / 2) * 1.12
+            );
+          } else {
+            geometry.cx = width / 2;
+            geometry.cy = height / 2;
+            geometry.r = Math.max(20, Math.min(width, height) * 0.28);
+          }
+        };
+
+        const makeParticle = (seeded) => {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = geometry.r * (0.92 + Math.random() * 0.18);
+          const speed = 0.12 + Math.random() * 0.55;
+          return {
+            x: geometry.cx + Math.cos(angle) * radius,
+            y: geometry.cy + Math.sin(angle) * radius,
+            vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 0.18,
+            vy: Math.sin(angle) * speed + (Math.random() - 0.5) * 0.18 - 0.05,
+            life: seeded ? Math.random() * 2.6 : 0,
+            maxLife: 2.8 + Math.random() * 3.2,
+            size: (0.8 + Math.random() * 2.1) * sizeRef.current,
+            alphaScale: 0.35 + Math.random() * 0.5,
+            drift: (Math.random() - 0.5) * 0.004
+          };
+        };
+        const seed = () => {
+          particles = [];
+          for (let index = 0; index < recordParticleCount; index += 1) {
+            particles.push(makeParticle(true));
+          }
+        };
+
+        const tick = (now) => {
+          if (!last) last = now;
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          const playing = playingRef.current;
+          intensity += ((playing ? 1 : 0) - intensity) * (playing ? 0.08 : 0.04);
+          context.clearRect(0, 0, width, height);
+          context.globalCompositeOperation = 'lighter';
+          const colorValue = colorRef.current;
+          let visible = false;
+
+          for (let index = 0; index < particles.length; index += 1) {
+            const particle = particles[index];
+            if (playing) {
+              particle.life += dt;
+              particle.x += particle.vx * dt * 60;
+              particle.y += particle.vy * dt * 60;
+              particle.vx += particle.drift * dt * 60;
+              particle.vy += particle.drift * 0.5 * dt * 60 - 0.0008;
+              if (particle.life >= particle.maxLife) {
+                particles[index] = makeParticle(false);
+                continue;
+              }
+            } else {
+              const damping = Math.pow(0.98, dt * 60);
+              particle.vx *= damping;
+              particle.vy *= damping;
+              particle.x += particle.vx * dt * 60;
+              particle.y += particle.vy * dt * 60;
+              particle.life += dt * 0.35;
+              if (particle.life >= particle.maxLife) particle.life = particle.maxLife;
+            }
+
+            const phase = Math.min(1, Math.max(0, particle.life / particle.maxLife));
+            const alpha = Math.max(
+              0,
+              Math.min(1, Math.sin(Math.PI * phase) * particle.alphaScale * intensity)
+            );
+            if (alpha <= 0.004) continue;
+            visible = true;
+            const tint = 'rgba(' + colorValue.r + ',' + colorValue.g + ',' + colorValue.b;
+            context.fillStyle = tint + ',' + (alpha * 0.12).toFixed(3) + ')';
+            context.beginPath();
+            context.arc(particle.x, particle.y, particle.size * 2.8, 0, Math.PI * 2);
+            context.fill();
+            context.fillStyle = tint + ',' + alpha.toFixed(3) + ')';
+            context.beginPath();
+            context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            context.fill();
+          }
+
+          if (playing || intensity > 0.01 || visible) {
+            frame = requestAnimationFrame(tick);
+          } else {
+            running = false;
+            frame = 0;
+          }
+        };
+
+        const start = () => {
+          if (running) return;
+          running = true;
+          last = 0;
+          frame = requestAnimationFrame(tick);
+        };
+
+        startRef.current = start;
+        resize();
+        seed();
+        if (playingRef.current && recordParticleCount > 0) start();
+
+        let observer = null;
+        if (typeof ResizeObserver === 'function') {
+          observer = new ResizeObserver(() => {
+            resize();
+            seed();
+          });
+          observer.observe(parent);
+        }
+        const onWindowResize = () => {
+          resize();
+          seed();
+        };
+        window.addEventListener('resize', onWindowResize);
+
+        return () => {
+          if (observer) observer.disconnect();
+          window.removeEventListener('resize', onWindowResize);
+          if (frame) cancelAnimationFrame(frame);
+          frame = 0;
+          running = false;
+          startRef.current = null;
+          context.clearRect(0, 0, width, height);
+          particles = [];
+        };
+      }, [props.artRef, props.particleCount]);
+
+      useEffect(() => {
+        if (props.playing && particleAllocation(props.particleCount).record > 0 && startRef.current) {
+          startRef.current();
+        }
+      }, [props.playing, props.particleCount]);
+
+      return h('canvas', {
+        ref: canvasRef,
+        className: 'dsh-music-particle-canvas',
+        'aria-hidden': true
+      });
+    }
+
     function NowPlaying(props) {
       const current = props.current;
       const shortcuts = props.shortcuts || DEFAULT_SETTINGS.shortcuts;
@@ -1390,30 +1899,109 @@ window.__ModuleLoader__.load({
       const progressMax = duration > 0 ? duration : 1;
       const progressValue = Math.min(playback.currentTime || 0, duration || 0);
       const repeatLabel = t('repeat.' + transport.repeat);
-      const artStyle = current
-        ? {
-            background:
-              'linear-gradient(135deg, hsl(' +
-              hueFor(current.id) +
-              'deg 72% 54%), hsl(' +
-              ((hueFor(current.id) + 58) % 360) +
-              'deg 68% 36%))'
-          }
-        : undefined;
 
       return h(
         'div',
         { className: 'dsh-music-now' },
+        h(ParticleField, {
+          artRef: props.artRef,
+          playing: transport.playing && !!current,
+          cover: props.labelImage || DEFAULT_VINYL_LABEL_IMAGE,
+          size: props.recordParticleSize,
+          color: props.recordParticleColor,
+          particleCount: props.particleCount
+        }),
         h(
           'div',
           {
             ref: props.artRef,
-            className: 'dsh-music-art' + (current ? '' : ' is-empty') + (transport.playing ? ' is-playing' : ''),
-            style: artStyle
+            className:
+              'dsh-music-art' +
+              (current ? '' : ' is-empty') +
+              (transport.playing ? ' is-playing' : ''),
+            'aria-hidden': true
           },
-          h('div', { className: 'dsh-music-art-ring is-one' }),
-          h('div', { className: 'dsh-music-art-ring is-two' }),
-          h(IconMusic, { size: 64 })
+          h(
+            'div',
+            { className: 'dsh-music-vinyl-plate' },
+            h(
+              'div',
+              { className: 'dsh-music-vinyl' },
+              h(VinylDisc, {
+                playing: transport.playing && !!current,
+                image: props.labelImage
+              }),
+              h('div', { className: 'dsh-music-vinyl-shine' })
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-tonearm' },
+            h(
+              'svg',
+              {
+                className: 'dsh-music-tonearm-svg',
+                viewBox: '0 0 240 240',
+                'aria-hidden': true,
+                focusable: false
+              },
+              h(
+                'g',
+                { className: 'dsh-music-tonearm-base' },
+                h('circle', {
+                  cx: 190,
+                  cy: 30,
+                  r: 18,
+                  fill: '#222a35',
+                  stroke: '#8b98aa',
+                  strokeWidth: 2
+                }),
+                h('circle', { cx: 190, cy: 30, r: 9, fill: '#cbd5e1' }),
+                h('circle', { cx: 190, cy: 30, r: 3, fill: '#0b0e13' })
+              ),
+              h(
+                'g',
+                { className: 'dsh-music-tonearm-arm' },
+                h('rect', {
+                  x: 194,
+                  y: 19,
+                  width: 24,
+                  height: 12,
+                  rx: 5,
+                  fill: '#7f8b9c',
+                  stroke: '#cbd5e1',
+                  strokeWidth: 1.5
+                }),
+                h('path', {
+                  d: 'M190 30 L124 92 L84 140',
+                  fill: 'none',
+                  stroke: '#cbd5e1',
+                  strokeWidth: 5,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round'
+                }),
+                h('rect', {
+                  x: 72,
+                  y: 132,
+                  width: 20,
+                  height: 26,
+                  rx: 5,
+                  fill: '#11161e',
+                  stroke: '#cbd5e1',
+                  strokeWidth: 2,
+                  transform: 'rotate(36 82 145)'
+                }),
+                h('path', {
+                  d: 'M82 146 L79 159',
+                  fill: 'none',
+                  stroke: '#e2e8f0',
+                  strokeWidth: 2,
+                  strokeLinecap: 'round'
+                }),
+                h('circle', { cx: 79, cy: 161, r: 2.8, fill: '#f8fafc' })
+              )
+            )
+          )
+        ),
         ),
         h(
           'div',
@@ -1542,8 +2130,23 @@ window.__ModuleLoader__.load({
       const paintRef = useRef(null);
       const maxBarRef = useRef(props.maxBarHeight);
       const speedRef = useRef(props.barSpeed);
+      const requestedParticleSize = Number(props.barParticleSize);
+      const particleSizeScale = Number.isFinite(requestedParticleSize)
+        ? Math.max(0, Math.min(200, requestedParticleSize)) / 100
+        : 1;
+      const requestedGlowSize = Number(props.barGlowSize);
+      const glowScale = Number.isFinite(requestedGlowSize)
+        ? Math.max(0, Math.min(200, requestedGlowSize)) / 100
+        : 1;
+      const playingRef = useRef(!!props.playing);
+      const particleColorRef = useRef(props.barParticleColor || props.barColor);
+      const particleSizeRef = useRef(particleSizeScale);
+      const particleStartRef = useRef(null);
       maxBarRef.current = props.maxBarHeight;
       speedRef.current = props.barSpeed;
+      playingRef.current = !!props.playing;
+      particleColorRef.current = props.barParticleColor || props.barColor;
+      particleSizeRef.current = particleSizeScale;
       const requestedOpacity = Number(props.barOpacity);
       const barOpacity = Number.isFinite(requestedOpacity)
         ? Math.max(0, Math.min(100, requestedOpacity)) / 100
@@ -1657,6 +2260,236 @@ window.__ModuleLoader__.load({
         if (paintRef.current) paintRef.current(!props.playing);
       }, [props.maxBarHeight]);
 
+      useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return undefined;
+        const canvas = container.querySelector('.dsh-music-bar-particles');
+        const barsLayer = container.querySelector('.dsh-music-bars');
+        const bars = Array.from(container.querySelectorAll('.dsh-music-bar'));
+        if (!canvas || !barsLayer || !bars.length) return undefined;
+        const context = canvas.getContext('2d');
+        if (!context) return undefined;
+
+        const barCount = bars.length;
+        const barAllocation = particleAllocation(props.particleCount);
+        const barCounts = Array.from({ length: barCount }, (_, index) =>
+          barAllocation.barBase + (index < barAllocation.barExtra ? 1 : 0)
+        );
+        const barParticleTotal = barCounts.reduce((sum, value) => sum + value, 0);
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+        let positions = [];
+        let particles = [];
+        let frame = 0;
+        let running = false;
+        let last = 0;
+        let intensity = 0;
+
+        const measure = () => {
+          const rect = container.getBoundingClientRect();
+          const nextWidth = Math.max(1, Math.floor(rect.width));
+          const nextHeight = Math.max(1, Math.floor(rect.height));
+          const nextDpr = Math.min(2, window.devicePixelRatio || 1);
+          if (nextWidth !== width || nextHeight !== height || nextDpr !== dpr) {
+            width = nextWidth;
+            height = nextHeight;
+            dpr = nextDpr;
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            context.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          positions = bars.map((bar) => {
+            const barRect = bar.getBoundingClientRect();
+            return {
+              x: barRect.left - rect.left + barRect.width / 2,
+              width: barRect.width
+            };
+          });
+        };
+
+        const getColor = () => {
+          const raw = String(particleColorRef.current || '').replace('#', '');
+          if (!/^[0-9a-f]{6}$/i.test(raw)) return { r: 79, g: 140, b: 255 };
+          return {
+            r: parseInt(raw.slice(0, 2), 16),
+            g: parseInt(raw.slice(2, 4), 16),
+            b: parseInt(raw.slice(4, 6), 16)
+          };
+        };
+
+        const getFrames = () => {
+          const rect = container.getBoundingClientRect();
+          const layerRect = barsLayer.getBoundingClientRect();
+          return bars.map((bar, index) => {
+            const styleHeight = parseFloat(bar.style.height) || 0;
+            const match = String(bar.style.transform || '').match(/scaleY\(([^)]+)\)/);
+            const scale = match ? parseFloat(match[1]) : 0.05;
+            const visibleHeight =
+              styleHeight * (Number.isFinite(scale) ? Math.max(0, scale) : 0.05);
+            const position = positions[index] || { x: 0, width: 0 };
+            return {
+              x: position.x,
+              width: position.width,
+              top: layerRect.bottom - rect.top - visibleHeight,
+              height: visibleHeight
+            };
+          });
+        };
+
+        const makeParticle = (barIndex, seeded, frames) => {
+          const barFrame = frames[barIndex] || {
+            x: width / 2,
+            width: 2,
+            top: height,
+            height: 0
+          };
+          const side = Math.random() < 0.5 ? -1 : 1;
+          const maxLife = 1.2 + Math.random() * 1.8;
+          return {
+            bar: barIndex,
+            x:
+              barFrame.x +
+              side * (Math.max(1, barFrame.width * 0.45) + Math.random() * 8),
+            y:
+              barFrame.top +
+              Math.random() * Math.min(18, Math.max(2, barFrame.height * 0.35)),
+            vx: side * (0.06 + Math.random() * 0.35),
+            vy: -(0.05 + Math.random() * 0.32),
+            life: seeded ? Math.random() * maxLife : 0,
+            maxLife,
+            size: (0.5 + Math.random() * 1.5) * particleSizeRef.current,
+            alphaScale: 0.3 + Math.random() * 0.5
+          };
+        };
+
+        const seed = () => {
+          const frames = getFrames();
+          particles = [];
+          for (let barIndex = 0; barIndex < barCount; barIndex += 1) {
+            const count = barCounts[barIndex];
+            for (let particleIndex = 0; particleIndex < count; particleIndex += 1) {
+              particles.push(makeParticle(barIndex, true, frames));
+            }
+          }
+        };
+
+        const tick = (now) => {
+          if (!last) last = now;
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          const playing = playingRef.current;
+          intensity += ((playing ? 1 : 0) - intensity) * (playing ? 0.08 : 0.04);
+          const frames = getFrames();
+          const color = getColor();
+          context.clearRect(0, 0, width, height);
+          context.globalCompositeOperation = 'lighter';
+          let visible = false;
+
+          for (let index = 0; index < particles.length; index += 1) {
+            const particle = particles[index];
+            if (playing) {
+              particle.life += dt;
+              particle.x += particle.vx * dt * 60;
+              particle.y += particle.vy * dt * 60;
+              particle.vx += (Math.random() - 0.5) * 0.002;
+              particle.vy -= 0.001;
+              if (particle.life >= particle.maxLife) {
+                particles[index] = makeParticle(particle.bar, false, frames);
+                continue;
+              }
+            } else {
+              const damping = Math.pow(0.98, dt * 60);
+              particle.vx *= damping;
+              particle.vy *= damping;
+              particle.x += particle.vx * dt * 60;
+              particle.y += particle.vy * dt * 60;
+              particle.life += dt * 0.35;
+              if (particle.life >= particle.maxLife) particle.life = particle.maxLife;
+            }
+
+            const phase = Math.min(1, Math.max(0, particle.life / particle.maxLife));
+            const alpha = Math.max(
+              0,
+              Math.min(
+                1,
+                Math.sin(Math.PI * phase) * particle.alphaScale * intensity
+              )
+            );
+            if (alpha <= 0.004) continue;
+            visible = true;
+            const tint =
+              'rgba(' + color.r + ',' + color.g + ',' + color.b + ',';
+            context.fillStyle = tint + (alpha * 0.12).toFixed(3) + ')';
+            context.beginPath();
+            context.arc(particle.x, particle.y, particle.size * 2.8, 0, Math.PI * 2);
+            context.fill();
+            context.fillStyle = tint + alpha.toFixed(3) + ')';
+            context.beginPath();
+            context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            context.fill();
+          }
+
+          if (playing || intensity > 0.01 || visible) {
+            frame = requestAnimationFrame(tick);
+          } else {
+            running = false;
+            frame = 0;
+          }
+        };
+
+        const start = () => {
+          if (running) return;
+          seed();
+          running = true;
+          last = 0;
+          frame = requestAnimationFrame(tick);
+        };
+
+        particleStartRef.current = start;
+        measure();
+        seed();
+        if (playingRef.current && barParticleTotal > 0) start();
+
+        let observer = null;
+        if (typeof ResizeObserver === 'function') {
+          observer = new ResizeObserver(() => {
+            measure();
+            seed();
+          });
+          observer.observe(container);
+        }
+        const onWindowResize = () => {
+          measure();
+          seed();
+        };
+        window.addEventListener('resize', onWindowResize);
+
+        return () => {
+          if (observer) observer.disconnect();
+          window.removeEventListener('resize', onWindowResize);
+          if (frame) cancelAnimationFrame(frame);
+          frame = 0;
+          running = false;
+          particleStartRef.current = null;
+          context.clearRect(0, 0, width, height);
+          particles = [];
+        };
+      }, [props.particleCount]);
+
+      useEffect(() => {
+        const allocation = particleAllocation(props.particleCount);
+        if (
+          props.playing &&
+          allocation.barBase * 32 + allocation.barExtra > 0 &&
+          particleStartRef.current
+        ) {
+          particleStartRef.current();
+        }
+      }, [props.playing, props.particleCount]);
+
       return h(
         'div',
         {
@@ -1673,7 +2506,11 @@ window.__ModuleLoader__.load({
           ref: containerRef,
           style: {
             '--dsh-music-bar-color': props.barColor || '#4f8cff',
-            '--dsh-music-bar-opacity': String(barOpacity)
+            '--dsh-music-bar-opacity': String(barOpacity),
+            '--dsh-music-bar-glow-small': (5 * glowScale).toFixed(2) + 'px',
+            '--dsh-music-bar-glow-large': (16 * glowScale).toFixed(2) + 'px',
+            '--dsh-music-bar-glow-color':
+              props.barGlowColor || props.barColor || '#4f8cff'
           }
         },
         h(
@@ -1682,7 +2519,11 @@ window.__ModuleLoader__.load({
           Array.from({ length: 32 }, (_, index) =>
             h('span', { key: index, className: 'dsh-music-bar' })
           )
-        )
+        ),
+        h('canvas', {
+          className: 'dsh-music-bar-particles',
+          'aria-hidden': true
+        })
       );
     }
 
@@ -1705,6 +2546,11 @@ window.__ModuleLoader__.load({
         barSpeed: settings.barSpeed,
         barOpacity: settings.barOpacity,
         barColor: settings.barColor,
+        barParticleSize: settings.barParticleSize,
+        barParticleColor: settings.barParticleColor,
+        barGlowSize: settings.barGlowSize,
+        barGlowColor: settings.barGlowColor,
+        particleCount: settings.particleCount,
         playing: state.playing,
         trackId: current.id,
         variant: 'workspace'
@@ -1795,6 +2641,11 @@ window.__ModuleLoader__.load({
                 barSpeed: settings.barSpeed,
                 barOpacity: settings.barOpacity,
                 barColor: settings.barColor,
+                barParticleSize: settings.barParticleSize,
+                barParticleColor: settings.barParticleColor,
+                barGlowSize: settings.barGlowSize,
+                barGlowColor: settings.barGlowColor,
+                particleCount: settings.particleCount,
                 playing: state.playing,
                 trackId: current.id,
                 variant: 'workspace-backdrop'
@@ -1812,8 +2663,104 @@ window.__ModuleLoader__.load({
       const shortcuts = settings.shortcuts || DEFAULT_SETTINGS.shortcuts;
       const [capturing, setCapturing] = useState(null);
       const [captureError, setCaptureError] = useState('');
+      const [resetConfirm, setResetConfirm] = useState(false);
+      const [page, setPage] = useState('main');
+      const [labelBusy, setLabelBusy] = useState(false);
+      const [labelError, setLabelError] = useState('');
       const panelRef = useRef(null);
+      const labelInputRef = useRef(null);
       const presets = ['#4f8cff', '#a855f7', '#22c55e', '#f59e0b', '#ef4444', '#ec4899'];
+      const isDefault = (key) => settings[key] === DEFAULT_SETTINGS[key];
+      const resetSetting = (key) => {
+        const value = DEFAULT_SETTINGS[key];
+        onChange({
+          [key]:
+            value && typeof value === 'object' ? Object.assign({}, value) : value
+        });
+      };
+      const resetShortcut = (action) => {
+        setCapturing(null);
+        setCaptureError('');
+        const current = settings.shortcuts || DEFAULT_SETTINGS.shortcuts;
+        const target = DEFAULT_SETTINGS.shortcuts[action];
+        if (current[action] === target) return;
+        const next = Object.assign({}, current);
+        for (let index = 0; index < SHORTCUT_ACTIONS.length; index += 1) {
+          const other = SHORTCUT_ACTIONS[index];
+          if (other !== action && next[other] === target) {
+            next[other] = current[action];
+          }
+        }
+        next[action] = target;
+        onChange({ shortcuts: next });
+      };
+      const goPage = (nextPage) => {
+        setCapturing(null);
+        setCaptureError('');
+        setPage(nextPage);
+      };
+      const handleLabelFile = (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        input.value = '';
+        if (!file) return;
+        if (!file.type || file.type.indexOf('image/') !== 0) {
+          setLabelError(t('labelImageInvalid'));
+          return;
+        }
+        if (file.size > 25 * 1024 * 1024) {
+          setLabelError(t('labelImageInvalid'));
+          return;
+        }
+        setLabelError('');
+        setLabelBusy(true);
+        const reader = new FileReader();
+        reader.onerror = () => {
+          setLabelBusy(false);
+          setLabelError(t('labelImageInvalid'));
+        };
+        reader.onload = () => {
+          const image = new Image();
+          image.onerror = () => {
+            setLabelBusy(false);
+            setLabelError(t('labelImageInvalid'));
+          };
+          image.onload = () => {
+            try {
+              const width = image.naturalWidth || image.width;
+              const height = image.naturalHeight || image.height;
+              if (!width || !height) throw new Error('empty image');
+              const side = Math.min(width, height);
+              const size = 512;
+              const canvas = document.createElement('canvas');
+              canvas.width = size;
+              canvas.height = size;
+              const context = canvas.getContext('2d');
+              if (!context) throw new Error('canvas unavailable');
+              context.fillStyle = '#ffffff';
+              context.fillRect(0, 0, size, size);
+              context.drawImage(
+                image,
+                (width - side) / 2,
+                (height - side) / 2,
+                side,
+                side,
+                0,
+                0,
+                size,
+                size
+              );
+              onChange({ labelImage: canvas.toDataURL('image/jpeg', 0.9) });
+              setLabelError('');
+            } catch (error) {
+              setLabelError(t('labelImageInvalid'));
+            }
+            setLabelBusy(false);
+          };
+          image.src = String(reader.result || '');
+        };
+        reader.readAsDataURL(file);
+      };
 
       useEffect(() => {
         if (panelRef.current) panelRef.current.focus();
@@ -1905,6 +2852,52 @@ window.__ModuleLoader__.load({
           ),
           h(
             'div',
+            { className: 'dsh-music-settings-tabs', role: 'tablist' },
+            h(
+              'button',
+              {
+                type: 'button',
+                role: 'tab',
+                className:
+                  'dsh-music-settings-tab' + (page === 'main' ? ' is-active' : ''),
+                'aria-selected': page === 'main',
+                onClick: () => goPage('main')
+              },
+              t('settingsGeneral')
+            ),
+            h(
+              'button',
+              {
+                type: 'button',
+                role: 'tab',
+                className:
+                  'dsh-music-settings-tab' + (page === 'vinyl' ? ' is-active' : ''),
+                'aria-selected': page === 'vinyl',
+                onClick: () => goPage('vinyl')
+              },
+              t('vinylOptions')
+            ),
+            h(
+              'button',
+              {
+                type: 'button',
+                role: 'tab',
+                className:
+                  'dsh-music-settings-tab' + (page === 'effects' ? ' is-active' : ''),
+                'aria-selected': page === 'effects',
+                onClick: () => goPage('effects')
+              },
+              t('effectsOptions')
+            )
+          ),
+          h(
+            'div',
+            {
+              className:
+                'dsh-music-settings-page' + (page === 'main' ? '' : ' is-hidden')
+            },
+          h(
+            'div',
             { className: 'dsh-music-settings-row' },
             h(
               'div',
@@ -1913,15 +2906,24 @@ window.__ModuleLoader__.load({
               h('div', { className: 'dsh-music-settings-note' }, t('spectrumEnabledHint'))
             ),
             h(
-              'label',
-              { className: 'dsh-music-switch' },
-              h('input', {
-                type: 'checkbox',
-                checked: settings.spectrumEnabled,
-                'aria-label': t('spectrumEnabled'),
-                onChange: (event) => onChange({ spectrumEnabled: event.target.checked })
-              }),
-              h('span', { className: 'dsh-music-switch-track', 'aria-hidden': true })
+              'div',
+              { className: 'dsh-music-settings-controls' },
+              h(
+                'label',
+                { className: 'dsh-music-switch' },
+                h('input', {
+                  type: 'checkbox',
+                  checked: settings.spectrumEnabled,
+                  'aria-label': t('spectrumEnabled'),
+                  onChange: (event) => onChange({ spectrumEnabled: event.target.checked })
+                }),
+                h('span', { className: 'dsh-music-switch-track', 'aria-hidden': true })
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('spectrumEnabled'),
+                onClick: () => resetSetting('spectrumEnabled')
+              })
             )
           ),
           h(
@@ -1934,16 +2936,25 @@ window.__ModuleLoader__.load({
               h('div', { className: 'dsh-music-settings-note' }, t('workspaceSpectrumEnabledHint'))
             ),
             h(
-              'label',
-              { className: 'dsh-music-switch' },
-              h('input', {
-                type: 'checkbox',
-                checked: settings.workspaceSpectrumEnabled,
-                'aria-label': t('workspaceSpectrumEnabled'),
-                onChange: (event) =>
-                  onChange({ workspaceSpectrumEnabled: event.target.checked })
-              }),
-              h('span', { className: 'dsh-music-switch-track', 'aria-hidden': true })
+              'div',
+              { className: 'dsh-music-settings-controls' },
+              h(
+                'label',
+                { className: 'dsh-music-switch' },
+                h('input', {
+                  type: 'checkbox',
+                  checked: settings.workspaceSpectrumEnabled,
+                  'aria-label': t('workspaceSpectrumEnabled'),
+                  onChange: (event) =>
+                    onChange({ workspaceSpectrumEnabled: event.target.checked })
+                }),
+                h('span', { className: 'dsh-music-switch-track', 'aria-hidden': true })
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('workspaceSpectrumEnabled'),
+                onClick: () => resetSetting('workspaceSpectrumEnabled')
+              })
             )
           ),
           h(
@@ -1956,16 +2967,25 @@ window.__ModuleLoader__.load({
               h('div', { className: 'dsh-music-settings-note' }, t('workspaceBarsPlacementHint'))
             ),
             h(
-              'select',
-              {
-                className: 'dsh-music-settings-select',
-                value: settings.workspaceBarsPlacement,
-                'aria-label': t('workspaceBarsPlacement'),
-                onChange: (event) =>
-                  onChange({ workspaceBarsPlacement: event.target.value })
-              },
-              h('option', { value: 'aboveInput' }, t('placementAboveInput')),
-              h('option', { value: 'bottom' }, t('placementBottom'))
+              'div',
+              { className: 'dsh-music-settings-controls' },
+              h(
+                'select',
+                {
+                  className: 'dsh-music-settings-select',
+                  value: settings.workspaceBarsPlacement,
+                  'aria-label': t('workspaceBarsPlacement'),
+                  onChange: (event) =>
+                    onChange({ workspaceBarsPlacement: event.target.value })
+                },
+                h('option', { value: 'aboveInput' }, t('placementAboveInput')),
+                h('option', { value: 'bottom' }, t('placementBottom'))
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('workspaceBarsPlacement'),
+                onClick: () => resetSetting('workspaceBarsPlacement')
+              })
             )
           ),
           h(
@@ -1973,9 +2993,18 @@ window.__ModuleLoader__.load({
             { className: 'dsh-music-settings-row is-column' },
             h(
               'div',
-              { className: 'dsh-music-settings-copy' },
-              h('div', { className: 'dsh-music-settings-label' }, t('maxBarHeight')),
-              h('div', { className: 'dsh-music-settings-note' }, settings.maxBarHeight + ' px')
+              { className: 'dsh-music-settings-row-head' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-copy' },
+                h('div', { className: 'dsh-music-settings-label' }, t('maxBarHeight')),
+                h('div', { className: 'dsh-music-settings-note' }, settings.maxBarHeight + ' px')
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('maxBarHeight'),
+                onClick: () => resetSetting('maxBarHeight')
+              })
             ),
             h('input', {
               type: 'range',
@@ -1998,9 +3027,18 @@ window.__ModuleLoader__.load({
             { className: 'dsh-music-settings-row is-column' },
             h(
               'div',
-              { className: 'dsh-music-settings-copy' },
-              h('div', { className: 'dsh-music-settings-label' }, t('barSpeed')),
-              h('div', { className: 'dsh-music-settings-note' }, settings.barSpeed + ' / 100')
+              { className: 'dsh-music-settings-row-head' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-copy' },
+                h('div', { className: 'dsh-music-settings-label' }, t('barSpeed')),
+                h('div', { className: 'dsh-music-settings-note' }, settings.barSpeed + ' / 100')
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('barSpeed'),
+                onClick: () => resetSetting('barSpeed')
+              })
             ),
             h('input', {
               type: 'range',
@@ -2024,9 +3062,18 @@ window.__ModuleLoader__.load({
             { className: 'dsh-music-settings-row is-column' },
             h(
               'div',
-              { className: 'dsh-music-settings-copy' },
-              h('div', { className: 'dsh-music-settings-label' }, t('barOpacity')),
-              h('div', { className: 'dsh-music-settings-note' }, settings.barOpacity + '%')
+              { className: 'dsh-music-settings-row-head' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-copy' },
+                h('div', { className: 'dsh-music-settings-label' }, t('barOpacity')),
+                h('div', { className: 'dsh-music-settings-note' }, settings.barOpacity + '%')
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('barOpacity'),
+                onClick: () => resetSetting('barOpacity')
+              })
             ),
             h('input', {
               type: 'range',
@@ -2050,9 +3097,18 @@ window.__ModuleLoader__.load({
             { className: 'dsh-music-settings-row is-column' },
             h(
               'div',
-              { className: 'dsh-music-settings-copy' },
-              h('div', { className: 'dsh-music-settings-label' }, t('cardOpacity')),
-              h('div', { className: 'dsh-music-settings-note' }, settings.cardOpacity + '%')
+              { className: 'dsh-music-settings-row-head' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-copy' },
+                h('div', { className: 'dsh-music-settings-label' }, t('cardOpacity')),
+                h('div', { className: 'dsh-music-settings-note' }, settings.cardOpacity + '%')
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('cardOpacity'),
+                onClick: () => resetSetting('cardOpacity')
+              })
             ),
             h('input', {
               type: 'range',
@@ -2070,6 +3126,46 @@ window.__ModuleLoader__.load({
               h('span', null, '100')
             ),
             h('div', { className: 'dsh-music-settings-note' }, t('cardOpacityHint'))
+          ),
+          h(
+            'div',
+            { className: 'dsh-music-settings-row is-column' },
+            h(
+              'div',
+              { className: 'dsh-music-settings-copy' },
+              h('div', { className: 'dsh-music-settings-label' }, t('playerTextColor')),
+              h(
+                'div',
+                { className: 'dsh-music-settings-note' },
+                settings.playerTextColor
+                  ? settings.playerTextColor.toUpperCase()
+                  : t('followTheme')
+              )
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-color-row' },
+              h('input', {
+                type: 'color',
+                value: settings.playerTextColor || '#e6edf7',
+                'aria-label': t('playerTextColor'),
+                onChange: (event) =>
+                  onChange({ playerTextColor: event.target.value })
+              }),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'dsh-music-text-reset',
+                  disabled: !settings.playerTextColor,
+                  title: t('resetSettingTitle'),
+                  'aria-label': t('followTheme'),
+                  onClick: () => onChange({ playerTextColor: '' })
+                },
+                t('followTheme')
+              )
+            ),
+            h('div', { className: 'dsh-music-settings-note' }, t('playerTextColorHint'))
           ),
           h(
             'div',
@@ -2105,7 +3201,12 @@ window.__ModuleLoader__.load({
                     onClick: () => onChange({ barColor: color })
                   })
                 )
-              )
+              ),
+              h(SettingReset, {
+                t,
+                disabled: isDefault('barColor'),
+                onClick: () => resetSetting('barColor')
+              })
             )
           ),
           h(
@@ -2143,7 +3244,14 @@ window.__ModuleLoader__.load({
                     capturing === item[0]
                       ? t('pressKey')
                       : shortcutLabel(shortcuts[item[0]])
-                  )
+                  ),
+                  h(SettingReset, {
+                    t,
+                    disabled:
+                      (settings.shortcuts || DEFAULT_SETTINGS.shortcuts)[item[0]] ===
+                      DEFAULT_SETTINGS.shortcuts[item[0]],
+                    onClick: () => resetShortcut(item[0])
+                  })
                 )
               )
             ),
@@ -2154,6 +3262,527 @@ window.__ModuleLoader__.load({
                   captureError
                 )
               : null
+          ),
+          h(
+            'div',
+            { className: 'dsh-music-settings-reset' },
+            h(
+              'div',
+              { className: 'dsh-music-settings-reset-copy' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-label' },
+                resetConfirm ? t('resetConfirm') : t('resetAll')
+              ),
+              h('div', { className: 'dsh-music-settings-note' }, t('resetAllHint'))
+            ),
+            resetConfirm
+              ? h(
+                  'div',
+                  { className: 'dsh-music-settings-reset-actions' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dsh-music-reset-confirm',
+                      onClick: () => {
+                        setCapturing(null);
+                        setCaptureError('');
+                        props.onReset();
+                        setResetConfirm(false);
+                      }
+                    },
+                    t('resetConfirmAction')
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dsh-music-reset-cancel',
+                      onClick: () => setResetConfirm(false)
+                    },
+                    t('cancel')
+                  )
+                )
+              : h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dsh-music-reset-btn',
+                    onClick: () => {
+                      setCapturing(null);
+                      setCaptureError('');
+                      setResetConfirm(true);
+                    }
+                  },
+                  t('resetAll')
+                )
+          ),
+          ),
+          h(
+            'div',
+            {
+              className:
+                'dsh-music-settings-page' + (page === 'vinyl' ? '' : ' is-hidden')
+            },
+            h(
+              'div',
+              { className: 'dsh-music-settings-page-head' },
+              h('div', { className: 'dsh-music-settings-title' }, t('vinylOptions')),
+              h('div', { className: 'dsh-music-settings-sub' }, t('vinylOptionsHint'))
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-settings-row is-column' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-row-head' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-copy' },
+                  h('div', { className: 'dsh-music-settings-label' }, t('vinylLabelImage')),
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-note' },
+                    settings.labelImage ? t('vinylLabelCustom') : t('vinylLabelDefault')
+                  )
+                ),
+                h(SettingReset, {
+                  t,
+                  disabled: !settings.labelImage,
+                  onClick: () => onChange({ labelImage: '' })
+                })
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-label-editor' },
+                h('img', {
+                  className: 'dsh-music-label-preview',
+                  src: settings.labelImage || DEFAULT_VINYL_LABEL_IMAGE,
+                  alt: ''
+                }),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dsh-music-label-select',
+                    disabled: labelBusy,
+                    onClick: () => {
+                      if (labelInputRef.current) labelInputRef.current.click();
+                    }
+                  },
+                  labelBusy ? t('processingImage') : t('chooseImage')
+                ),
+                h('input', {
+                  ref: labelInputRef,
+                  type: 'file',
+                  accept: 'image/*',
+                  style: { display: 'none' },
+                  onChange: handleLabelFile
+                })
+              ),
+              h('div', { className: 'dsh-music-settings-note' }, t('vinylLabelImageHint')),
+              labelError
+                ? h(
+                    'div',
+                    { className: 'dsh-music-label-error', role: 'alert' },
+                    labelError
+                  )
+                : null
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-settings-row is-column' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-row-head' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-copy' },
+                  h('div', { className: 'dsh-music-settings-label' }, t('vinylColor')),
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-note' },
+                    settings.vinylColor.toUpperCase()
+                  )
+                ),
+                h(SettingReset, {
+                  t,
+                  disabled: isDefault('vinylColor'),
+                  onClick: () => resetSetting('vinylColor')
+                })
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-color-row' },
+                h('input', {
+                  type: 'color',
+                  value: settings.vinylColor,
+                  'aria-label': t('vinylColor'),
+                  onChange: (event) => onChange({ vinylColor: event.target.value })
+                })
+              ),
+              h('div', { className: 'dsh-music-settings-note' }, t('vinylColorHint'))
+            )
+          ),
+          h(
+            'div',
+            {
+              className:
+                'dsh-music-settings-page' + (page === 'effects' ? '' : ' is-hidden')
+            },
+            h(
+              'div',
+              { className: 'dsh-music-settings-page-head' },
+              h('div', { className: 'dsh-music-settings-title' }, t('effectsOptions')),
+              h('div', { className: 'dsh-music-settings-sub' }, t('effectsHint'))
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-settings-row is-column' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-row-head' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-copy' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-label' },
+                    t('particleCount'),
+                    h(
+                      'span',
+                      { className: 'dsh-music-settings-warning' },
+                      t('particleCountWarning')
+                    )
+                  ),
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-note' },
+                    String(settings.particleCount)
+                  )
+                ),
+                h(SettingReset, {
+                  t,
+                  disabled: isDefault('particleCount'),
+                  onClick: () => resetSetting('particleCount')
+                })
+              ),
+              h('input', {
+                type: 'range',
+                min: 0,
+                max: 200,
+                step: 1,
+                value: settings.particleCount,
+                'aria-label': t('particleCount'),
+                onChange: (event) =>
+                  onChange({ particleCount: Number(event.target.value) })
+              }),
+              h(
+                'div',
+                { className: 'dsh-music-settings-scale' },
+                h('span', null, '0'),
+                h('span', null, '200')
+              ),
+              h('div', { className: 'dsh-music-settings-note' }, t('particleCountHint'))
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-settings-effect-group' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-effect-title' },
+                t('recordParticles')
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-settings-row is-column' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-row-head' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-copy' },
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-label' },
+                      t('recordParticleSize')
+                    ),
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-note' },
+                      settings.recordParticleSize + '%'
+                    )
+                  ),
+                  h(SettingReset, {
+                    t,
+                    disabled: isDefault('recordParticleSize'),
+                    onClick: () => resetSetting('recordParticleSize')
+                  })
+                ),
+                h('input', {
+                  type: 'range',
+                  min: 0,
+                  max: 200,
+                  step: 1,
+                  value: settings.recordParticleSize,
+                  'aria-label': t('recordParticleSize'),
+                  onChange: (event) =>
+                    onChange({ recordParticleSize: Number(event.target.value) })
+                }),
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-scale' },
+                  h('span', null, '0'),
+                  h('span', null, '200')
+                ),
+                h('div', { className: 'dsh-music-settings-note' }, t('effectSizeHint'))
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-settings-row is-column' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-row-head' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-copy' },
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-label' },
+                      t('recordParticleColor')
+                    ),
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-note' },
+                      settings.recordParticleColor
+                        ? settings.recordParticleColor.toUpperCase()
+                        : t('followCover')
+                    )
+                  )
+                ),
+                h(
+                  'div',
+                  { className: 'dsh-music-color-row' },
+                  h('input', {
+                    type: 'color',
+                    value: settings.recordParticleColor || '#ffffff',
+                    'aria-label': t('recordParticleColor'),
+                    onChange: (event) =>
+                      onChange({ recordParticleColor: event.target.value })
+                  }),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dsh-music-text-reset',
+                      disabled: !settings.recordParticleColor,
+                      onClick: () => onChange({ recordParticleColor: '' })
+                    },
+                    t('followCover')
+                  )
+                ),
+                h('div', { className: 'dsh-music-settings-note' }, t('effectColorHint'))
+              )
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-settings-effect-group' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-effect-title' },
+                t('barParticles')
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-settings-row is-column' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-row-head' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-copy' },
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-label' },
+                      t('barParticleSize')
+                    ),
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-note' },
+                      settings.barParticleSize + '%'
+                    )
+                  ),
+                  h(SettingReset, {
+                    t,
+                    disabled: isDefault('barParticleSize'),
+                    onClick: () => resetSetting('barParticleSize')
+                  })
+                ),
+                h('input', {
+                  type: 'range',
+                  min: 0,
+                  max: 200,
+                  step: 1,
+                  value: settings.barParticleSize,
+                  'aria-label': t('barParticleSize'),
+                  onChange: (event) =>
+                    onChange({ barParticleSize: Number(event.target.value) })
+                }),
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-scale' },
+                  h('span', null, '0'),
+                  h('span', null, '200')
+                ),
+                h('div', { className: 'dsh-music-settings-note' }, t('effectSizeHint'))
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-settings-row is-column' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-row-head' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-copy' },
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-label' },
+                      t('barParticleColor')
+                    ),
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-note' },
+                      settings.barParticleColor
+                        ? settings.barParticleColor.toUpperCase()
+                        : t('followBarColor')
+                    )
+                  )
+                ),
+                h(
+                  'div',
+                  { className: 'dsh-music-color-row' },
+                  h('input', {
+                    type: 'color',
+                    value: settings.barParticleColor || settings.barColor,
+                    'aria-label': t('barParticleColor'),
+                    onChange: (event) =>
+                      onChange({ barParticleColor: event.target.value })
+                  }),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dsh-music-text-reset',
+                      disabled: !settings.barParticleColor,
+                      onClick: () => onChange({ barParticleColor: '' })
+                    },
+                    t('followBarColor')
+                  )
+                ),
+                h('div', { className: 'dsh-music-settings-note' }, t('effectColorHint'))
+              )
+            ),
+            h(
+              'div',
+              { className: 'dsh-music-settings-effect-group' },
+              h(
+                'div',
+                { className: 'dsh-music-settings-effect-title' },
+                t('barGlow')
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-settings-row is-column' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-row-head' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-copy' },
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-label' },
+                      t('barGlowSize')
+                    ),
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-note' },
+                      settings.barGlowSize + '%'
+                    )
+                  ),
+                  h(SettingReset, {
+                    t,
+                    disabled: isDefault('barGlowSize'),
+                    onClick: () => resetSetting('barGlowSize')
+                  })
+                ),
+                h('input', {
+                  type: 'range',
+                  min: 0,
+                  max: 200,
+                  step: 1,
+                  value: settings.barGlowSize,
+                  'aria-label': t('barGlowSize'),
+                  onChange: (event) =>
+                    onChange({ barGlowSize: Number(event.target.value) })
+                }),
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-scale' },
+                  h('span', null, '0'),
+                  h('span', null, '200')
+                ),
+                h('div', { className: 'dsh-music-settings-note' }, t('effectSizeHint'))
+              ),
+              h(
+                'div',
+                { className: 'dsh-music-settings-row is-column' },
+                h(
+                  'div',
+                  { className: 'dsh-music-settings-row-head' },
+                  h(
+                    'div',
+                    { className: 'dsh-music-settings-copy' },
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-label' },
+                      t('barGlowColor')
+                    ),
+                    h(
+                      'div',
+                      { className: 'dsh-music-settings-note' },
+                      settings.barGlowColor
+                        ? settings.barGlowColor.toUpperCase()
+                        : t('followBarColor')
+                    )
+                  )
+                ),
+                h(
+                  'div',
+                  { className: 'dsh-music-color-row' },
+                  h('input', {
+                    type: 'color',
+                    value: settings.barGlowColor || settings.barColor,
+                    'aria-label': t('barGlowColor'),
+                    onChange: (event) =>
+                      onChange({ barGlowColor: event.target.value })
+                  }),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dsh-music-text-reset',
+                      disabled: !settings.barGlowColor,
+                      onClick: () => onChange({ barGlowColor: '' })
+                    },
+                    t('followBarColor')
+                  )
+                ),
+                h('div', { className: 'dsh-music-settings-note' }, t('effectColorHint'))
+              )
+            )
           ),
           h('div', { className: 'dsh-music-settings-foot' }, t('autoSaved'))
         )
@@ -2179,6 +3808,7 @@ window.__ModuleLoader__.load({
           ? h(SettingsOverlay, {
               settings: snapshot.settings,
               onChange: props.store.update,
+              onReset: props.store.reset,
               onClose: props.store.close,
               t: props.t
             })
@@ -2201,6 +3831,17 @@ window.__ModuleLoader__.load({
           ? Math.max(0, Math.min(100, rawCardOpacity))
           : DEFAULT_SETTINGS.cardOpacity) / 100
       );
+      const rawTextColor = String(settings.playerTextColor || '');
+      const playerTextColor = /^#[0-9a-f]{6}$/i.test(rawTextColor) ? rawTextColor : '';
+      const rawVinylColor = String(settings.vinylColor || '');
+      const vinylColor = /^#[0-9a-f]{6}$/i.test(rawVinylColor)
+        ? rawVinylColor
+        : DEFAULT_SETTINGS.vinylColor;
+      const rootStyle = {
+        '--dsh-music-card-opacity': cardOpacityCss,
+        '--dsh-music-vinyl-color': vinylColor
+      };
+      if (playerTextColor) rootStyle['--dsh-music-text-color'] = playerTextColor;
       const fileInput = useRef(null);
       const artRef = useRef(null);
 
@@ -2343,8 +3984,9 @@ window.__ModuleLoader__.load({
             id: 'dsh-music-root',
             className:
               'dsh-music-root' +
-              (settings.spectrumEnabled ? '' : ' is-spectrum-off'),
-            style: { '--dsh-music-card-opacity': cardOpacityCss }
+              (settings.spectrumEnabled ? '' : ' is-spectrum-off') +
+              (playerTextColor ? ' is-custom-text' : ''),
+            style: rootStyle
           },
           h('input', {
             ref: fileInput,
@@ -2362,6 +4004,11 @@ window.__ModuleLoader__.load({
                 barSpeed: settings.barSpeed,
                 barOpacity: settings.barOpacity,
                 barColor: settings.barColor,
+                barParticleSize: settings.barParticleSize,
+                barParticleColor: settings.barParticleColor,
+                barGlowSize: settings.barGlowSize,
+                barGlowColor: settings.barGlowColor,
+                particleCount: settings.particleCount,
                 playing: state.playing && !!current,
                 trackId: current ? current.id : '',
                 variant: 'player-backdrop'
@@ -2518,6 +4165,10 @@ window.__ModuleLoader__.load({
                 t,
                 current,
                 artRef,
+                labelImage: settings.labelImage || '',
+                recordParticleSize: settings.recordParticleSize,
+                recordParticleColor: settings.recordParticleColor || '',
+                particleCount: settings.particleCount,
                 shortcuts: settings.shortcuts || DEFAULT_SETTINGS.shortcuts
               })
             )
@@ -2994,18 +4645,42 @@ window.__ModuleLoader__.load({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.dsh-music-now-card::before {
+  display: none !important;
 }
 .dsh-music-now-card .dsh-music-now {
   flex: 1;
   min-height: 0;
 }
 .dsh-music-now {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
   min-height: 0;
-  padding: 14px;
+  padding: 20px 14px 14px;
   overflow-y: auto;
+  isolation: isolate;
+}
+.dsh-music-particle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.dsh-music-now > .dsh-music-art,
+.dsh-music-now-copy,
+.dsh-music-progress,
+.dsh-music-controls {
+  position: relative;
+  z-index: 1;
 }
 .dsh-music-art {
   position: relative;
@@ -3013,42 +4688,197 @@ window.__ModuleLoader__.load({
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 230px;
+  max-width: 260px;
   margin: 0 auto;
   aspect-ratio: 1 / 1;
   flex: none;
-  overflow: hidden;
-  border-radius: 11px;
-  background: var(--dsw-alias-bg-layer-2);
-  color: rgba(255, 255, 255, 0.94);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #f8fafc;
+  box-shadow: none;
   transform: scale(var(--dsh-music-art-scale, 1));
   transform-origin: center center;
   will-change: transform;
 }
 .dsh-music-art.is-empty {
   color: var(--dsw-alias-label-tertiary);
-  background: var(--dsw-alias-bg-layer-2);
-  box-shadow: none;
 }
-.dsh-music-art-ring {
+.dsh-music-vinyl-plate {
   position: absolute;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.dsh-music-vinyl-plate::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 112%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 50%;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  opacity: var(--dsh-music-card-opacity, 0.64);
+  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+  backdrop-filter: blur(18px) saturate(1.1);
+  clip-path: circle(50% at 50% 50%);
+  transform: translate(-50%, -50%);
 }
-.dsh-music-art-ring.is-one {
-  width: 68%;
-  height: 68%;
+.dsh-music-vinyl {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 88%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 0 0 7px rgba(255, 255, 255, 0.035);
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
-.dsh-music-art-ring.is-two {
-  width: 86%;
-  height: 86%;
+.dsh-music-vinyl-disc {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 16%,
+      rgba(255, 255, 255, 0.06) 16.2% 16.6%,
+      transparent 17%
+    ),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.055) 0 1px,
+      rgba(0, 0, 0, 0.5) 1px 2.5px,
+      transparent 2.5px 4.5px
+    ),
+    radial-gradient(
+      circle at 32% 26%,
+      color-mix(in srgb, var(--dsh-music-vinyl-color, #0a0b10) 52%, #ffffff) 0%,
+      var(--dsh-music-vinyl-color, #0a0b10) 38%,
+      color-mix(in srgb, var(--dsh-music-vinyl-color, #0a0b10) 55%, #000000) 72%
+    );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
-.dsh-music-art.is-playing .dsh-music-art-ring {
-  animation: dsh-music-breathe 2.6s ease-in-out infinite;
+.dsh-music-vinyl-grooves {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at 50% 50%,
+    transparent 0 3px,
+    rgba(255, 255, 255, 0.025) 3px 4px
+  );
+  pointer-events: none;
 }
-.dsh-music-art.is-playing .dsh-music-art-ring.is-two {
-  animation-delay: 0.35s;
+.dsh-music-vinyl-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34%;
+  height: 34%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.68);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  clip-path: circle(50% at 50% 50%);
+  transform: translate(-50%, -50%);
+}
+.dsh-music-vinyl-label-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+.dsh-music-vinyl-spindle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  background: #05070a;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.dsh-music-vinyl-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 3;
+  background: conic-gradient(
+    from 210deg at 50% 50%,
+    transparent 0 18%,
+    rgba(255, 255, 255, 0.13) 24%,
+    transparent 31%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.07) 78%,
+    transparent 86%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.dsh-music-tonearm {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.dsh-music-tonearm-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.dsh-music-tonearm-arm {
+  transform-box: view-box;
+  transform-origin: 190px 30px;
+  transform: rotate(38deg);
+  transition: transform 1.7s cubic-bezier(0.22, 0.75, 0.25, 1);
+  will-change: transform;
+}
+.dsh-music-art.is-playing .dsh-music-tonearm-arm {
+  transform: rotate(-2deg) translateY(2px);
+}
+.dsh-music-art.is-empty .dsh-music-vinyl-disc {
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+.dsh-music-art.is-empty .dsh-music-vinyl-label {
+  background: #4a5260;
+}.dsh-music-art.is-empty .dsh-music-tonearm {
+  opacity: 0.6;
 }
 .dsh-music-now-copy {
   min-width: 0;
@@ -3164,7 +4994,20 @@ window.__ModuleLoader__.load({
   gap: clamp(2px, 0.5vw, 6px);
   padding: 0 2.5%;
   transform: translateY(0);
+  z-index: 0;
+  filter:
+    drop-shadow(0 0 var(--dsh-music-bar-glow-small, 5px) color-mix(in srgb, var(--dsh-music-bar-glow-color, #4f8cff) 68%, transparent))
+    drop-shadow(0 0 var(--dsh-music-bar-glow-large, 16px) color-mix(in srgb, var(--dsh-music-bar-glow-color, #4f8cff) 38%, transparent));
   will-change: transform;
+}
+.dsh-music-bar-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 .dsh-music-bar {
   display: block;
@@ -3203,6 +5046,47 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-label-tertiary);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+}
+#dsh-music-root.is-custom-text {
+  --dsh-music-text-primary: var(--dsh-music-text-color);
+  --dsh-music-text-tertiary: color-mix(
+    in srgb,
+    var(--dsh-music-text-color) 70%,
+    transparent
+  );
+}
+#dsh-music-root.is-custom-text :is(
+    .dsh-music-eyebrow,
+    .dsh-music-title,
+    .dsh-music-section-title,
+    .dsh-music-row-title,
+    .dsh-music-empty-title,
+    .dsh-music-now-title,
+    .dsh-music-drop-title,
+    .dsh-music-search input
+  ) {
+  color: var(--dsh-music-text-primary);
+}
+#dsh-music-root.is-custom-text :is(
+    .dsh-music-subtitle,
+    .dsh-music-count,
+    .dsh-music-row-index,
+    .dsh-music-row-meta,
+    .dsh-music-empty-body,
+    .dsh-music-drop-hint,
+    .dsh-music-now-label,
+    .dsh-music-now-sub,
+    .dsh-music-times,
+    .dsh-music-drop-body
+  ) {
+  color: var(--dsh-music-text-tertiary);
+}
+#dsh-music-root.is-custom-text .dsh-music-search input::placeholder {
+  color: var(--dsh-music-text-tertiary);
+}
+#dsh-music-root.is-custom-text
+  .dsh-music-banner:not(.is-error):not(.is-warning) {
+  color: var(--dsh-music-text-tertiary);
 }
 .dsh-music-controls {
   display: flex;
@@ -3338,10 +5222,6 @@ window.__ModuleLoader__.load({
 @keyframes dsh-music-spin {
   to { transform: rotate(360deg); }
 }
-@keyframes dsh-music-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.65; }
-  50% { transform: scale(1.035); opacity: 1; }
-}
 @container dsh-music (max-width: 860px) {
   .dsh-music-content {
     grid-template-columns: minmax(0, 1fr);
@@ -3350,7 +5230,7 @@ window.__ModuleLoader__.load({
   .dsh-music-now {
     order: -1;
     display: grid;
-    grid-template-columns: 148px minmax(0, 1fr);
+    grid-template-columns: 170px minmax(0, 1fr);
     grid-template-rows: auto auto auto auto;
     column-gap: 14px;
     align-items: center;
@@ -3390,21 +5270,16 @@ window.__ModuleLoader__.load({
     width: 100%;
   }
   .dsh-music-now {
-    grid-template-columns: 104px minmax(0, 1fr);
-  }
-  .dsh-music-art {
-    border-radius: 9px;
-  }
-  .dsh-music-art svg {
-    width: 42px;
-    height: 42px;
+    grid-template-columns: 116px minmax(0, 1fr);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .dsh-music-eq i,
-  .dsh-music-art.is-playing .dsh-music-art-ring,
   .dsh-music-spinner {
     animation: none;
+  }
+  .dsh-music-tonearm-arm {
+    transition-duration: 0.01s;
   }
 }
 
@@ -3477,6 +5352,111 @@ window.__ModuleLoader__.load({
 .dsh-music-settings-close:hover {
   background: var(--dsw-alias-bg-layer-2);
   color: var(--dsw-alias-label-primary);
+}
+.dsh-music-settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 4px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1);
+}
+.dsh-music-settings-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.dsh-music-settings-tab:hover {
+  color: var(--dsw-alias-label-primary);
+}
+.dsh-music-settings-tab.is-active {
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-border-l1);
+}
+.dsh-music-settings-page {
+  margin-top: 14px;
+}
+.dsh-music-settings-page.is-hidden {
+  display: none;
+}
+.dsh-music-settings-page-head {
+  padding: 4px 0 14px;
+}
+.dsh-music-settings-page-head .dsh-music-settings-title {
+  font-size: 18px;
+}
+.dsh-music-settings-page-head .dsh-music-settings-sub {
+  margin-top: 4px;
+}
+.dsh-music-settings-effect-group {
+  margin-top: 6px;
+}
+.dsh-music-settings-effect-title {
+  padding: 14px 0 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.dsh-music-settings-warning {
+  margin-left: 6px;
+  color: var(--dsw-alias-label-error, #e5484d);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.dsh-music-label-editor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dsh-music-label-preview {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border: 2px solid var(--dsw-alias-border-l2);
+  border-radius: 50%;
+  background: #ffffff;
+  object-fit: cover;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+.dsh-music-label-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dsh-music-label-select:hover:not(:disabled) {
+  background: var(--dsw-alias-bg-layer-2);
+}
+.dsh-music-label-select:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.dsh-music-label-error {
+  color: var(--dsw-alias-label-error, #e5484d);
+  font-size: 12px;
+  line-height: 1.4;
 }
 .dsh-music-settings-row {
   display: flex;
@@ -3556,6 +5536,44 @@ window.__ModuleLoader__.load({
   outline: 2px solid var(--dsw-alias-brand-primary);
   outline-offset: 2px;
 }
+.dsh-music-settings-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.dsh-music-settings-row-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dsh-music-settings-row-head .dsh-music-settings-copy {
+  flex: 1;
+}
+.dsh-music-setting-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+.dsh-music-setting-reset:hover:not(:disabled) {
+  border-color: var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+}
+.dsh-music-setting-reset:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
 .dsh-music-switch {
   position: relative;
   display: inline-flex;
@@ -3620,6 +5638,26 @@ window.__ModuleLoader__.load({
   background: var(--dsw-alias-bg-layer-2);
   cursor: pointer;
 }
+.dsh-music-text-reset {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dsh-music-text-reset:hover:not(:disabled) {
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+}
+.dsh-music-text-reset:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
 .dsh-music-presets {
   display: flex;
   align-items: center;
@@ -3680,6 +5718,72 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-state-error-primary);
   font-size: 11px;
   line-height: 1.4;
+}
+.dsh-music-settings-reset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsw-alias-state-error-primary);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--dsw-alias-state-error-primary) 8%,
+    transparent
+  );
+}
+.dsh-music-settings-reset-copy {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.dsh-music-settings-reset-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dsh-music-reset-btn,
+.dsh-music-reset-confirm,
+.dsh-music-reset-cancel {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dsh-music-reset-btn {
+  border: 1px solid var(--dsw-alias-state-error-primary);
+  background: transparent;
+  color: var(--dsw-alias-state-error-primary);
+}
+.dsh-music-reset-btn:hover {
+  background: color-mix(
+    in srgb,
+    var(--dsw-alias-state-error-primary) 12%,
+    transparent
+  );
+}
+.dsh-music-reset-confirm {
+  border: 1px solid #b91c1c;
+  background: #dc2626;
+  color: #ffffff;
+}
+.dsh-music-reset-confirm:hover {
+  border-color: #991b1b;
+  background: #b91c1c;
+}
+.dsh-music-reset-cancel {
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+}
+.dsh-music-reset-cancel:hover {
+  background: var(--dsw-alias-bg-layer-2);
 }
 .dsh-music-settings-foot {
   margin-top: 4px;
