@@ -1,7 +1,7 @@
 {
   "name": "@dakelinya0001/dsh-music-player",
   "version": "1.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Local music player for DSH with audio-reactive spectrum bars and customizable shortcuts.",
   "license": "MIT",
