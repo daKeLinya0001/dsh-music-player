@@ -585,4 +585,4 @@ IndexedDB 数据不会自动同步到其他浏览器或机器。
 ## 版本
 
 - `1.1.0`
-- 私有本地插件，包名 `@dakelinya0001/dsh-music-player`
+- 开源DSH插件，包名 `@dakelinya0001/dsh-music-player`
